@@ -1,0 +1,8 @@
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+
+[workspace.dependencies]
+# Flexible concrete Error type built on std::error::Error
+anyhow = "1.0.75"
+
