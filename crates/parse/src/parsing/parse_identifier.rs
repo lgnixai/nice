@@ -5,31 +5,42 @@ use nom::combinator::{cut, map, opt, recognize, value, verify};
 use nom::error::context;
 use nom::multi::many0_count;
 use nom::sequence::tuple;
-use ast::IDENTIFIER_SEPARATOR;
+use ast::{Identifier, IDENTIFIER_SEPARATOR};
 use crate::input::Input;
 use crate::{PineResult, KEYWORDS};
 use crate::parse_util::{ token};
 use std::{collections::HashSet, str};
 
-pub fn identifier(input: Input) -> PineResult<String> {
+
+
+pub(crate) fn parse_identifier(input: Input) -> PineResult<Identifier> {
     context("identifier", token(raw_identifier))(input)
 }
 
-fn raw_identifier(input: Input) -> PineResult<String> {
-    verify(unchecked_identifier, |identifier: &str| {
-        !KEYWORDS.contains(&identifier)
+fn raw_identifier(input: Input) -> PineResult<Identifier> {
+    verify(unchecked_identifier, |identifier| {
+        !KEYWORDS.contains(&&*identifier.name)
     })(input)
 }
 
-fn unchecked_identifier(input: Input) -> PineResult<String> {
+fn unchecked_identifier(input: Input) -> PineResult<Identifier> {
     map(
         recognize(tuple((
             alt((value((), alpha1::<Input, _>), value((), char('_')))),
             many0_count(alt((value((), alphanumeric1), value((), char('_'))))),
         ))),
-        |span| str::from_utf8(span.as_bytes()).unwrap().into(),
+        |(span)| {
+            let s: String = str::from_utf8(span.as_bytes()).unwrap().to_string();
+            Identifier::new(s, 0)
+        }
+
     )(input)
 }
+
+// pub fn identifier(input: Input) -> PineResult<String> {
+//     context("identifier", token(raw_identifier))(input)
+// }
+//
 
 pub fn qualified_identifier(input: Input) -> PineResult<String> {
     map(

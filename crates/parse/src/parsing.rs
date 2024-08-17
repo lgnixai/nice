@@ -10,6 +10,9 @@ mod parse_assign;
 mod parse_declaration_mode;
 mod parse_data_type;
 mod parse_node;
+mod parse_function;
+mod parse_block;
+mod parse_parameter;
 
 pub use parse_import::*;
 pub use parse_record::*;
@@ -34,10 +37,11 @@ mod tests {
 
         let path = "/bot/test/1.pen";
         let code = fs::read_to_string(path);
-        let i=r#"a =x+1"#;
-       //let c=expression(input(i,"root"));
+        let i=code.unwrap();
+        //let i=r#"a =x+1"#;
+      let c=type_alias(input(&i.as_str()));
         //let c=expression(input(i,"root"));
-        let c=parse_ast(code.unwrap().as_str(), "root");
+       // let c=parse_ast(code.unwrap().as_str(), "root");
 
         match c {
             Ok(module) => {

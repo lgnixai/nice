@@ -1,4 +1,4 @@
-use crate::{combinator::{separated_or_terminated_list0, separated_or_terminated_list1}, error::NomError, input::{self, Input}, PineResult, KEYWORDS, operations::{reduce_operations, SuffixOperator}, OPERATOR_CHARACTERS, OPERATOR_MODIFIERS, parse_record, record_definition};
+use crate::{combinator::{separated_or_terminated_list0, separated_or_terminated_list1}, error::NomError, input::{self, Input}, PineResult, KEYWORDS, operations::{reduce_operations, SuffixOperator}, OPERATOR_CHARACTERS, OPERATOR_MODIFIERS, parse_record, record_definition, parse_import};
 use ast::{types::Type, *};
 use nom::{
     branch::alt,
@@ -17,15 +17,14 @@ use nom::{
 };
 use position::Position;
 use std::{collections::HashSet, str};
-use crate::parsing::parse_identifier::{identifier, qualified_identifier};
-use crate::parsing::parse_variable::variable;
+use crate::parsing::parse_identifier::{parse_identifier, qualified_identifier};
 
 
 pub fn module(input: Input) -> PineResult<Module> {
     map(
         all_consuming(tuple((
             position,
-            many0(import),
+            many0(parse_import),
             many0(foreign_import),
             many0(alt((into(type_alias), into(record_definition)))),
             many0(function_definition),
@@ -63,34 +62,11 @@ pub fn comments(input: Input) -> PineResult<Vec<Comment>> {
     )(input)
 }
 
-fn import(input: Input) -> PineResult<Import> {
-    context(
-        "import",
-        map(
-            tuple((
-                position,
-                keyword("import"),
-                module_path,
-                cut(tuple((
-                    opt(preceded(keyword("as"), identifier)),
-                    opt(delimited(
-                        sign("{"),
-                        separated_or_terminated_list1(sign(","), unqualified_name),
-                        sign("}"),
-                    )),
-                ))),
-            )),
-            |(position, _, path, (prefix, names))| {
-                Import::new(path, prefix, names.unwrap_or_default(), position())
-            },
-        ),
-    )(input)
-}
 
 pub fn unqualified_name(input: Input) -> PineResult<UnqualifiedName> {
     map(
-        token(tuple((position, identifier))),
-        |(position, identifier)| UnqualifiedName::new(identifier, position()),
+        token(tuple((position, parse_identifier))),
+        |(position, parse_identifier)| UnqualifiedName::new(parse_identifier.name   , position()),
     )(input)
 }
 
@@ -107,7 +83,7 @@ pub fn module_path(input: Input) -> PineResult<ModulePath> {
 fn internal_module_path(input: Input) -> PineResult<InternalModulePath> {
     context(
         "internal module path",
-        map(module_path_components(identifier), InternalModulePath::new),
+        map(module_path_components(map(parse_identifier,|id|id.name)), InternalModulePath::new),
     )(input)
 }
 
@@ -116,10 +92,10 @@ fn external_module_path(input: Input) -> PineResult<ExternalModulePath> {
         "external module path",
         map(
             tuple((
-                identifier,
+                parse_identifier,
                 cut(module_path_components(public_module_path_component)),
             )),
-            |(package, components)| ExternalModulePath::new(package, components),
+            |(package, components)| ExternalModulePath::new(package.name, components),
         ),
     )(input)
 }
@@ -133,7 +109,13 @@ fn module_path_components<'a>(
 fn public_module_path_component(input: Input) -> PineResult<String> {
     context(
         "public module path component",
-        verify(identifier, ast::analysis::is_name_public),
+        map(
+            verify(
+                parse_identifier,  // 假设 parse_identifier 返回 IResult<Input, Identifier>
+                |s: &Identifier| ast::analysis::is_name_public(&s.name),  // 验证 Identifier 的 name 是否为公共
+            ),
+            |identifier: Identifier| identifier.name  // 将 Identifier 的 name 字段提取为 String
+        )
     )(input)
 }
 
@@ -145,11 +127,11 @@ fn foreign_import(input: Input) -> PineResult<ForeignImport> {
                 position,
                 keyword("import"),
                 keyword("foreign"),
-                cut(tuple((opt(calling_convention), identifier, type_))),
+                cut(tuple((opt(calling_convention), parse_identifier, type_))),
             )),
-            |(position, _, _, (calling_convention, name, type_))| {
+            |(position, _, _, (calling_convention, ident, type_))| {
                 ForeignImport::new(
-                    name,
+                    ident.name,
                     calling_convention.unwrap_or_default(),
                     type_,
                     position(),
@@ -176,12 +158,12 @@ pub fn function_definition(input: Input) -> PineResult<FunctionDefinition> {
             tuple((
                 position,
                 opt(foreign_export),
-                identifier,
+                parse_identifier,
                 sign("="),
                 cut(lambda),
             )),
-            |(position, foreign_export, name, _, lambda)| {
-                FunctionDefinition::new(name, lambda, foreign_export, position())
+            |(position, foreign_export, ident, _, lambda)| {
+                FunctionDefinition::new(ident.name, lambda, foreign_export, position())
             },
         ),
     )(input)
@@ -203,8 +185,8 @@ pub(crate) fn type_alias(input: Input) -> PineResult<TypeAlias> {
     context(
         "type alias",
         map(
-            tuple((position, keyword("type"), identifier, sign("="), cut(type_))),
-            |(position, _, name, _, type_)| TypeAlias::new(name, type_, position()),
+            tuple((position, keyword("type"), parse_identifier, sign("="), cut(type_))),
+            |(position, _, ident, _, type_)| TypeAlias::new(ident.name, type_, position()),
         ),
     )(input)
 }
@@ -280,7 +262,7 @@ fn reference_type(input: Input) -> PineResult<types::Reference> {
         "reference type",
         map(
             tuple((position, token(qualified_identifier))),
-            |(position, identifier)| types::Reference::new(identifier, position()),
+            |(position, parse_identifier)| types::Reference::new(parse_identifier, position()),
         ),
     )(input)
 }
@@ -313,12 +295,13 @@ fn block(input: Input) -> PineResult<Block> {
     )(input)
 }
 
-fn statement(input: Input) -> PineResult<Statement> {
+pub fn statement(input: Input) -> PineResult<Statement> {
     context(
         "statement",
         map(
-            tuple((position, opt(terminated(identifier, sign("="))), expression)),
-            |(position, name, expression)| Statement::new(name, expression, position()),
+            tuple((position, opt(terminated(parse_identifier, sign("="))), expression)),
+            |(position, ident, expression)| Statement::new(ident
+                                                               .map(|identifier| identifier.name), expression, position()),
         ),
     )(input)
 }
@@ -426,8 +409,8 @@ fn record_field_operator(input: Input) -> PineResult<SuffixOperator> {
     context(
         "record field",
         map(
-            tuple((position, sign("."), cut(identifier))),
-            |(position, _, identifier)| SuffixOperator::RecordField(identifier, position()),
+            tuple((position, sign("."), cut(parse_identifier))),
+            |(position, _, identifier)| SuffixOperator::RecordField(identifier.name, position()),
         ),
     )(input)
 }
@@ -484,8 +467,8 @@ fn argument(input: Input) -> PineResult<Argument> {
     context(
         "argument",
         map(
-            tuple((position, identifier, cut(type_))),
-            |(position, name, type_)| Argument::new(name, type_, position()),
+            tuple((position, parse_identifier, cut(type_))),
+            |(position, ident, type_)| Argument::new(ident.name, type_, position()),
         ),
     )(input)
 }
@@ -533,10 +516,10 @@ fn if_list(input: Input) -> PineResult<IfList> {
                 keyword("if"),
                 sign("["),
                 cut(tuple((
-                    identifier,
+                    parse_identifier,
                     sign(","),
                     sign("..."),
-                    identifier,
+                    parse_identifier,
                     sign("]"),
                     sign("="),
                     expression,
@@ -546,7 +529,7 @@ fn if_list(input: Input) -> PineResult<IfList> {
                 ))),
             )),
             |(position, _, _, (first_name, _, _, rest_name, _, _, argument, then, _, else_))| {
-                IfList::new(argument, first_name, rest_name, then, else_, position())
+                IfList::new(argument, first_name.name, rest_name.name, then, else_, position())
             },
         ),
     )(input)
@@ -559,7 +542,7 @@ fn if_map(input: Input) -> PineResult<IfMap> {
             tuple((
                 position,
                 keyword("if"),
-                identifier,
+                parse_identifier,
                 sign("="),
                 expression,
                 sign("["),
@@ -571,8 +554,8 @@ fn if_map(input: Input) -> PineResult<IfMap> {
                     block,
                 ))),
             )),
-            |(position, _, name, _, map, _, (key, _, then, _, else_))| {
-                IfMap::new(name, map, key, then, else_, position())
+            |(position, _, ident, _, map, _, (key, _, then, _, else_))| {
+                IfMap::new(ident.name, map, key, then, else_, position())
             },
         ),
     )(input)
@@ -585,7 +568,7 @@ fn if_type(input: Input) -> PineResult<IfType> {
             tuple((
                 position,
                 keyword("if"),
-                identifier,
+                parse_identifier,
                 sign("="),
                 expression,
                 keyword("as"),
@@ -598,9 +581,9 @@ fn if_type(input: Input) -> PineResult<IfType> {
                     opt(preceded(keyword("else"), block)),
                 ))),
             )),
-            |(position, _, identifier, _, argument, _, (first_branch, branches, else_))| {
+            |(position, _, parse_identifier, _, argument, _, (first_branch, branches, else_))| {
                 IfType::new(
-                    identifier,
+                    parse_identifier.name,
                     argument,
                     [first_branch].into_iter().chain(branches).collect(),
                     else_,
@@ -762,13 +745,19 @@ fn list_comprehension_branch(input: Input) -> PineResult<ListComprehensionBranch
                 position,
                 keyword("for"),
                 cut(tuple((
-                    separated_or_terminated_list1(sign(","), identifier),
+                    separated_or_terminated_list1(sign(","), parse_identifier),
                     keyword("in"),
                     separated_or_terminated_list1(sign(","), expression),
                     opt(preceded(keyword("if"), expression)),
                 ))),
             )),
             |(position, _, (element_names, _, iteratees, condition))| {
+
+                let element_names: Vec<String> = element_names
+                    .iter()
+                    .map(|identifier| identifier.name.clone())  // 提取 name 字段并克隆
+                    .collect();
+
                 ListComprehensionBranch::new(element_names, iteratees, condition, position())
             },
         ),
@@ -805,6 +794,15 @@ fn map_element(input: Input) -> PineResult<MapElement> {
         ),
         map(preceded(sign("..."), cut(expression)), MapElement::Multiple),
     ))(input)
+}
+pub fn variable(input: Input) -> PineResult<Variable> {
+    context(
+        "variable",
+        map(
+            tuple((position, token(qualified_identifier))),
+            |(position, parse_identifier)| Variable::new(parse_identifier, position()),
+        ),
+    )(input)
 }
 
 

@@ -14,6 +14,15 @@ impl Identifier {
     }
 }
 
+
+impl Default for Identifier {
+    fn default() -> Self {
+        Self {
+            name: String::from("null"),  // 默认的 name
+            node_id: NodeId::default(),  // 假设 NodeId 实现了 Default
+        }
+    }
+}
 impl PartialEq for Identifier {
     fn eq(&self, other: &Self) -> bool {
         self.name == other.name

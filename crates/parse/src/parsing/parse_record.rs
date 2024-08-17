@@ -9,7 +9,7 @@ use crate::combinator::{separated_or_terminated_list0, separated_or_terminated_l
 use crate::input::Input;
 use crate::PineResult;
 use crate::parse_util::{expression, keyword, position, sign};
-use crate::parsing::parse_identifier::{identifier, qualified_identifier};
+use crate::parsing::parse_identifier::{parse_identifier, qualified_identifier};
 
 
 pub fn parse_record(input: Input) -> PineResult<Record> {
@@ -54,8 +54,8 @@ fn record_field(input: Input) -> PineResult<RecordField> {
     context(
         "record field",
         map(
-            tuple((position, identifier, sign(":"), cut(crate::parsing::parse_util::expression))),
-            |(position, name, _, expression)| RecordField::new(name, expression, position()),
+            tuple((position, parse_identifier, sign(":"), cut(crate::parsing::parse_util::expression))),
+            |(position, ident, _, expression)| RecordField::new(ident.name, expression, position()),
         ),
     )(input)
 }
@@ -66,11 +66,11 @@ pub fn record_definition(input: Input) -> PineResult<RecordDefinition> {
             tuple((
                 position,
                 keyword("type"),
-                identifier,
+                parse_identifier,
                 sign("{"),
                 cut(tuple((many0(record_field_definition), sign("}")))),
             )),
-            |(position, _, name, _, (fields, _))| RecordDefinition::new(name, fields, position()),
+            |(position, _, ident, _, (fields, _))| RecordDefinition::new(ident.name, fields, position()),
         ),
     )(input)
 }
@@ -79,8 +79,8 @@ pub fn record_field_definition(input: Input) -> PineResult<types::RecordField> {
     context(
         "record field",
         map(
-            tuple((position, identifier, crate::parsing::parse_util::type_)),
-            |(position, name, type_)| types::RecordField::new(name, type_, position()),
+            tuple((position, parse_identifier, crate::parsing::parse_util::type_)),
+            |(position, ident, type_)| types::RecordField::new(ident.name, type_, position()),
         ),
     )(input)
 }

@@ -10,41 +10,44 @@ pub struct VariableDefinition {
     // lambda: Lambda,
     // foreign_export: Option<ForeignExport>,
 
-    declaration_mode: Option<DeclarationMode>,
-    var_type: Option<DataType>,
-    identifier: Identifier,
-    value: Expression,
-    position: Position,
+    pub declaration_mode: Option<DeclarationMode>,
+    pub var_type: Option<DataType>,
+    pub identifier: Identifier,
+    pub value: Expression,
+    pub position: Position,
 }
-//
-// impl VariableDefinition {
-//     pub fn new(
-//         name: impl Into<String>,
-//         lambda: Lambda,
-//         foreign_export: Option<ForeignExport>,
-//         position: Position,
-//     ) -> Self {
-//         Self {
-//             name: name.into(),
-//             lambda,
-//             foreign_export,
-//             position,
-//         }
-//     }
-//
-//     pub fn name(&self) -> &str {
-//         &self.name
-//     }
-//
-//     pub fn lambda(&self) -> &Lambda {
-//         &self.lambda
-//     }
-//
-//     pub fn foreign_export(&self) -> Option<&ForeignExport> {
-//         self.foreign_export.as_ref()
-//     }
-//
-//     pub fn position(&self) -> &Position {
-//         &self.position
-//     }
-// }
+
+impl VariableDefinition {
+    pub fn new(
+        declaration_mode: Option<DeclarationMode>,
+        var_type:Option<DataType>,
+        identifier:Identifier,
+        value:Expression,
+        position: Position,
+    ) -> Self {
+        Self {
+            declaration_mode,
+            var_type,
+            identifier,
+            value,
+            position,
+        }
+    }
+
+
+    pub fn value(&self) -> &Expression {
+        &self.value
+    }
+
+    pub fn identifier(&self) -> &Identifier {
+        &self.identifier
+    }
+
+    pub fn var_type(&self) -> Option<&DataType> {
+        self.var_type.as_ref()
+    }
+
+    pub fn position(&self) -> &Position {
+        &self.position
+    }
+}
