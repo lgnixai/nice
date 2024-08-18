@@ -46,6 +46,7 @@ mod variable_definition;
 mod identifier;
 mod nodeid;
 mod node;
+pub mod utils;
 
 
 pub use argument::*;
@@ -96,4 +97,5 @@ pub use variable_definition::*;
 pub use nodeid::*;
 pub use identifier::*;
 pub use node::*;
+pub use utils::*;
 pub const IDENTIFIER_SEPARATOR: &str = "'";

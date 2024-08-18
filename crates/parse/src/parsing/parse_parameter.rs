@@ -12,7 +12,7 @@ pub fn parse_parameter(input:Input) -> PineResult<Parameter> {
     let (input, position) = position(input)?;
     let (input, ident) = parse_identifier(input)?;
     let (input, default_value) = opt(preceded(tag("="), expression))(input)?;
-    Ok((input, Parameter::new(ident.name, default_value,position())))
+    Ok((input, Parameter::new(ident, default_value,position())))
 }
 
 pub fn parse_parameter_list(input:Input) -> PineResult< Vec<Parameter>> {

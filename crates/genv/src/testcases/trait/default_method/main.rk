@@ -1,0 +1,6 @@
+trait Test
+  @test: -> @
+
+impl Test Int64
+
+main: -> (42).test!

@@ -1,0 +1,2 @@
+f: a, b -> ~IAdd a b
+main: -> f 20, 22

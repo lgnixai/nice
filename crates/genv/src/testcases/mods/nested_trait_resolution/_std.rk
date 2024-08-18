@@ -1,0 +1,15 @@
+infix + 4
+infix |> 1
+
+# Helpers
+|>: a, b -> b a
+
+## Num
+trait Num
+  +: @ => @ => @
+
+impl Num Int64
+  +: a, b -> ~IAdd a b
+
+use Num::(*)
+

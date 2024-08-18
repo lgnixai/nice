@@ -8,13 +8,14 @@ use nom::sequence::tuple;
 use ast::{Main, Module, Statement, Statements, TypeDefinition};
 use crate::input::Input;
 use crate::{blank, function_definition, PineResult, parsing, position, record_definition};
+use crate::parsing::parse_function::parse_function;
 
 pub fn parse_statement(input: Input) -> PineResult<Main>{
     map(
         all_consuming(tuple((
             position,
             many0(alt((into(crate::parsing::parse_util::type_alias), into(record_definition)))),
-            many0(function_definition),
+            many0(parse_function),
             blank,
         ))),
         |(position,  type_definitions,definitions, _)| {

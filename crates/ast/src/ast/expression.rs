@@ -22,6 +22,7 @@ pub enum Expression {
     String(ByteString),
     UnaryOperation(UnaryOperation),
     Variable(Variable),
+
 }
 
 impl Expression {
@@ -43,6 +44,7 @@ impl Expression {
             Self::String(string) => string.position(),
             Self::UnaryOperation(operation) => operation.position(),
             Self::Variable(variable) => variable.position(),
+            //Self::Na() => None,
         }
     }
 }

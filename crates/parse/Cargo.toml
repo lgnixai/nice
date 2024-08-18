@@ -8,7 +8,13 @@ edition = "2021"
 ast = { path = "../ast" }
 nom = "7.1.3"
 nom_locate = "4.2.0"
+ariadne = "0.1.5"
 position = { path = "../position" }
+log = "0.4.22"
+regex = "1.10.6"
+colored = "2.1.0"
+serde = { version = "1.0.208", features = ["derive"] }
+
 
 [dev-dependencies]
 indoc = "2"

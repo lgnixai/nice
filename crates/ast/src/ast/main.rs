@@ -2,12 +2,12 @@ use super::{
     function_definition::FunctionDefinition, type_definition::TypeDefinition, ForeignImport, Import,
 };
 use position::Position;
-use crate::{Expression, Map, Record, Statement};
+use crate::{Expression, FunctionDecl, Map, Record, Statement};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct Main {
     type_definitions: Vec<TypeDefinition>,
-    function_definitions: Vec<FunctionDefinition>,
+    function_definitions: Vec<FunctionDecl>,
     position: Position,
 }
 
@@ -15,7 +15,7 @@ impl Main {
     pub fn new(
         type_definitions: Vec<TypeDefinition>,
 
-        function_definitions: Vec<FunctionDefinition>,
+        function_definitions: Vec<FunctionDecl>,
         position: Position,
     ) -> Self {
         Self {
@@ -26,7 +26,7 @@ impl Main {
     }
 
 
-    pub fn function_definitions(&self) -> &[FunctionDefinition] {
+    pub fn function_definitions(&self) -> &[FunctionDecl] {
         &self.function_definitions
     }
 

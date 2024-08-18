@@ -1,0 +1,15 @@
+id: a -> a
+
+trait Foo
+  @foo: @
+
+impl Foo Int64
+  @foo: -> id @
+
+impl Foo Bool
+  @foo: -> id @
+
+main: ->
+  true.foo()
+  (42).foo()
+

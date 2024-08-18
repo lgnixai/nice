@@ -1,0 +1,23 @@
+[package]
+name = "genv"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = "2.32.0"
+lazy_static = "1.2.0"
+regex = "1.5.6"
+env_logger = "0.5.12"
+log = "0.4"
+either = "1.5"
+serde = "*"
+serde_derive = '*'
+bincode = "*"
+colored = "2.0.0"
+paste = "1.0.5"
+rustyline = "9.0.0"
+nom = "7.1.1"
+nom_locate = "4.0.0"
+itertools = "0.10.3"
+snailquote = "0.3.1"
+ariadne = "0.1.5"

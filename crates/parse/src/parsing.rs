@@ -13,11 +13,18 @@ mod parse_node;
 mod parse_function;
 mod parse_block;
 mod parse_parameter;
+mod parse_if;
+
 
 pub use parse_import::*;
 pub use parse_record::*;
 pub use parse_map::*;
 pub use parse_util::*;
+pub use parse_function::*;
+pub use parse_if::*;
+pub use parse_identifier::*;
+pub use parse_variable::*;
+
 use crate::parse;
 
 
@@ -39,9 +46,9 @@ mod tests {
         let code = fs::read_to_string(path);
         let i=code.unwrap();
         //let i=r#"a =x+1"#;
-      let c=type_alias(input(&i.as_str()));
+      //let c=type_alias(input(&i.as_str()));
         //let c=expression(input(i,"root"));
-       // let c=parse_ast(code.unwrap().as_str(), "root");
+        let c=parse_ast(i.as_str(), "root");
 
         match c {
             Ok(module) => {
