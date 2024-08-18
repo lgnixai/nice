@@ -7,9 +7,9 @@ use nom::multi::{many0, separated_list0};
 use nom::sequence::tuple;
 use ast::{Main, Module, Statement, Statements, TypeDefinition};
 use crate::input::Input;
-use crate::{blank, function_definition, PineResult, parsing, position, record_definition};
+use crate::{blank, function_definition, PineResult, parsing, record_definition};
 use crate::parsing::parse_function::parse_function;
-
+use parsing::parse_util::position;
 pub fn parse_statement(input: Input) -> PineResult<Main>{
     map(
         all_consuming(tuple((

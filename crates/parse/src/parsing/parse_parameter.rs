@@ -6,13 +6,14 @@ use nom::sequence::{delimited, preceded};
 use ast::Parameter;
 use crate::input::Input;
 use crate::parsing::parse_identifier::parse_identifier;
-use crate::{expression, PineResult, position};
+use crate::{expression, PineResult};
+use crate::parsing::parse_util::position;
 
 pub fn parse_parameter(input:Input) -> PineResult<Parameter> {
-    let (input, position) = position(input)?;
+    let (input, pp) = position(input)?;
     let (input, ident) = parse_identifier(input)?;
     let (input, default_value) = opt(preceded(tag("="), expression))(input)?;
-    Ok((input, Parameter::new(ident, default_value,position())))
+    Ok((input, Parameter::new(ident, default_value,pp())))
 }
 
 pub fn parse_parameter_list(input:Input) -> PineResult< Vec<Parameter>> {

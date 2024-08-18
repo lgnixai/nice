@@ -8,7 +8,13 @@ mod parser;
 mod ty;
 mod engine;
 
+pub mod util;
+pub use self::parsing::*;
+pub use self::parser::*;
+pub use self::input::*;
 
+pub use engine::*;
+pub use ty::*;
 use ast::Comment;
 pub use error::ParseError;
 use input::input;

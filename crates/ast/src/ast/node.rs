@@ -52,7 +52,7 @@ impl TopLevel {
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Body {
     pub stmts: Vec<Statement>,
 }
@@ -109,8 +109,8 @@ impl FunctionDecl {
 // 参数定义
 #[derive(Debug, PartialEq, Clone)]
 pub struct Parameter {
-    name: Identifier,                        // 参数名称
-    default_value: Option<Expression>,         // 可选的默认值
+    pub name: Identifier,                        // 参数名称
+    pub default_value: Option<Expression>,         // 可选的默认值
     position: Position,
 }
 
@@ -234,4 +234,11 @@ impl ForIn {
     pub fn new(value: Identifier, expr: Expression, body: Body) -> Self {
         Self { value, expr, body }
     }
+}
+
+
+#[derive(PartialEq, Debug, Clone)]
+pub struct VariableStatement {
+    pub mutable: bool,
+    pub declarations: Vec<VariableDefinition>,
 }

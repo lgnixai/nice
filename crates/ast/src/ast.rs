@@ -98,4 +98,5 @@ pub use nodeid::*;
 pub use identifier::*;
 pub use node::*;
 pub use utils::*;
+pub use expression::*;
 pub const IDENTIFIER_SEPARATOR: &str = "'";

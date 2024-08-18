@@ -1,4 +1,4 @@
-pub(crate) mod config;
+pub mod config;
 mod diagnostic;
 mod parsing_context;
 mod scopes;
